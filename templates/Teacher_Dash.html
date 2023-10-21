@@ -1,1 +1,113 @@
-<h1>I am a teacher</h1>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exams Dashboard</title>
+    <style>
+        /* Basic styling */
+
+        .sidebar {
+            height: 100%;
+            width: 250px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background-color: #111;
+            padding-top: 20px;
+        }
+
+        .sidebar a,
+        .sidebar button {
+            padding: 10px 15px;
+            text-decoration: none;
+            font-size: 18px;
+            color: white;
+            display: block;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .sidebar a:hover,
+        .sidebar button:hover {
+            background-color: #575757;
+        }
+
+        .content {
+            margin-left: 260px;
+            padding: 20px;
+        }
+
+
+        .card-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .card {
+            width: 200px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .create-exam-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="sidebar">
+        <a href="/home">Home</a>
+        <a href="/student-data">Student Data</a>
+        <a href="/course-update">Course Update</a>
+        <button onclick="location.href='/'">Sign Out</button> <!-- Sign out button -->
+    </div>
+
+    <!-- Main content area -->
+    <div class="content">
+        <!-- Your main content goes here -->
+        <h2>Welcome to the Teacher Dashboard</h2>
+    </div>
+
+
+    <div class="card-container">
+        <!-- Example cards for previous exams -->
+        <div class="card">
+            <h3>Exam 1</h3>
+            <p>Date: 01/01/2023</p>
+        </div>
+        <div class="card">
+            <h3>Exam 2</h3>
+            <p>Date: 02/15/2023</p>
+        </div>
+        <!-- ... add more exam cards as needed ... -->
+    </div>
+
+    <!-- Circular button to create a new exam -->
+    <button class="create-exam-btn" onclick="location.href='/create-exam'">+</button>
+</body>
+
+</html>
