@@ -1,4 +1,5 @@
-from flask import Flask,render_template, request
+from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import jsonify
 from flask.helpers import redirect
 from flask_mysqldb import MySQL
 import mysql.connector
@@ -11,7 +12,7 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 app.secret_key = 'some_secret_key'  # A secret key for Flask's session
 
 # Initialize the OpenAI API with your token
-openai.api_key = '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'
+openai.api_key = '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'
 
 quiz_data = {
     'content': '',
@@ -166,7 +167,7 @@ def student(id):
         socketio.emit('student_update', {'student_id': id, 'results': quiz_data['students'][id]})
         
         if quiz_data['use_openai']:
-            is_correct = check_answer(question, answer)
+            is_correct = check_answer(question, answer, quiz_data['content'])
         else:
             # Check if the answer matches the custom answer
             is_correct = any((q == question and a == answer) for q, a in quiz_data['custom_questions'])
@@ -211,10 +212,10 @@ def generate_open_ended_question(content, previous_answers):
     return response.choices[0].text.strip()
 
 
-def check_answer(question, answer):
+def check_answer(question, answer, context):
     response = openai.Completion.create(
         engine="text-davinci-002",
-        prompt=f"Is the following answer correct for the question? Question: {question}. Answer: {answer}. Answer with yes or no.",
+        prompt=f"Is the following answer correct for the question? Context: {context}. Question: {question}. Answer: {answer}. Answer with yes or no.",
         max_tokens=10
     )
 
@@ -245,6 +246,46 @@ def get_quiz_data():
         correct_by_question = [ans['is_correct'] for ans in answers]
         data["students"].append({"student_id": student_id, "results": correct_by_question})
     return jsonify(data)
+
+@app.route('/student_dashboard', methods=['GET', 'POST'])
+def student_dashboard():
+    if 'username' not in session:
+        return redirect(url_for('login_post'))
+
+    if request.method == 'POST':
+        # Handle form submission for importing content or taking quizzes
+        # For now, let's just redirect to the student's quiz page
+        student_id = session['username'] # assuming the username is unique and serves as an ID
+        return redirect(url_for('student', id=student_id))
+    
+    return render_template('student_dashboard.html')
+
+
+@app.route('/student_self_quiz', methods=['GET', 'POST'])
+def student_self_quiz():
+    if 'username' not in session or 'student_content' not in session or 'student_num_questions' not in session:
+        return redirect(url_for('login_post'))
+
+    content = session['student_content']
+    num_questions = session['student_num_questions']
+
+    if request.method == 'POST':
+        question = request.form['question']
+        answer = request.form['answer']
+        is_correct = check_answer(question, answer, content)
+        
+        # Save the result (for now just print it, you can expand this)
+        print(f"Question: {question}, Answer: {answer}, Correct: {is_correct}")
+
+        if num_questions > 1:
+            session['student_num_questions'] = num_questions - 1
+            return redirect(url_for('student_self_quiz'))
+        else:
+            return "Quiz completed. Thank you!"
+    
+    question = generate_open_ended_question(content, [])
+    return render_template('student.html', question=question)
+
 
 @app.route('/student/<id>/report', methods=['GET'])
 def student_report(id):
