@@ -2,10 +2,24 @@ from flask import Flask,render_template, request
 from flask.helpers import redirect
 from flask_mysqldb import MySQL
 import mysql.connector
+import openai
+from flask_socketio import SocketIO, emit
  
 # instance of flask application
 app = Flask(__name__)
+socketio = SocketIO(app, cors_allowed_origins="*")
+app.secret_key = 'some_secret_key'  # A secret key for Flask's session
 
+# Initialize the OpenAI API with your token
+openai.api_key = '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'
+
+quiz_data = {
+    'content': '',
+    'num_questions': 0,
+    'active': False,
+    'students': {},  # Store student data by ID
+    'custom_questions': []  # Initialize custom questions
+}
 
 mydb = mysql.connector.connect(user='root', password='Soccersoccer23*', host='localhost', database='users_hack')
 
@@ -27,7 +41,7 @@ def login_post():
     username = request.form.get('username')
     password = request.form.get('password')
 
-    # Query the database to check for the user's credentials
+    # Query the database to check for the suser's credentials
     query = "SELECT username, password, UserType FROM users_hack WHERE username = %s"
     cursor = mydb.cursor()
     cursor.execute(query, (username,))
@@ -39,7 +53,7 @@ def login_post():
         # Authentication successful
         userType = user_data[2]
         if userType == 'Teacher':
-            return render_template('index.html') #RENDER TEACHER DASHBOARD
+            return render_template('teacher.html') #RENDER TEACHER DASHBOARD
         else:
              return render_template('index.html') #RENDER STUDENT DASHBOARD
     return render_template('auth/login.html')
@@ -71,7 +85,7 @@ def signup():
             mydb.commit()
             print('Registration successful. You can now log in.')
             if user_type == 'Teacher':
-                return render_template('index.html') #USE TEACHER DASHBOARD HERE
+                return render_template('teacher.html') #USE TEACHER DASHBOARD HERE
             else:
                 return render_template('index.html') #USE STUDENT DASHBOARD HERE
 
@@ -82,9 +96,162 @@ def create_exam():
     
 
 
+@app.route('/teacher', methods=['GET', 'POST'])
+def teacher():
+    global quiz_data
+    if request.method == 'POST':
+        # Capture custom questions and their answers if provided
+        print("Form data received:", request.form)  # Diagnostic print
+        custom_questions = request.form.getlist('custom_question[]')
+        custom_answers = request.form.getlist('custom_answer[]')
+        quiz_data['content'] = request.form.get('content', '')
+        quiz_data['num_questions'] = int(request.form.get('num_questions', 0))
+        quiz_data['custom_questions'] = list(zip(custom_questions, custom_answers))
+        
+        # Determine if we're on the Custom Questions tab or the Smart Questions tab
+        tab_type = request.form.get('tab_type', 'smart')  # Default to "smart" if not provided
+        
+        if tab_type == 'smart' and not quiz_data['content']:
+            print("Please provide content for smart questions before starting the quiz.", "error")
+            return render_template('teacher.html', quiz_data=quiz_data)
+        if tab_type == 'custom' and not quiz_data['custom_questions']:
+            print("Please provide custom questions before starting the quiz.", "error")
+            return render_template('teacher.html', quiz_data=quiz_data)
+        
+        
+        
+        if 'start' in request.form:
+            quiz_data['active'] = True
+            print("Quiz started successfully!", "success")
+            # Check if there are custom questions. If yes, don't rely on OpenAI
+            if custom_questions:
+                quiz_data['use_openai'] = False
+            else:
+                quiz_data['use_openai'] = True
+            
+        if 'end' in request.form:
+            quiz_data = {
+                'content': '',
+                'num_questions': 0,
+                'active': False,
+                'students': {},  # Store student data by ID
+                'custom_questions': []  # Initialize custom questions
+            }
+            print("Quiz ended and data reset successfully!", "success")
+
+
+        elif 'collect' in request.form:
+            # For simplicity, just print reports to the console
+            for student_id, answers in quiz_data['students'].items():
+                report = generate_report(answers)
+                print(f"Report for Student {student_id}: {report}")
+            return redirect(url_for('teacher'))
+    return render_template('teacher.html', quiz_data=quiz_data)
 
 
 
+@app.route('/student/<id>', methods=['GET', 'POST'])
+def student(id):
+    if not quiz_data['active']:
+        return "Quiz not active. Please wait for the teacher to start the quiz."
+    
+    if id not in quiz_data['students']:
+        quiz_data['students'][id] = []
+    
+    if request.method == 'POST':
+        answer = request.form['answer']
+        question = request.form['question']
+        print(answer)
+
+        socketio.emit('student_update', {'student_id': id, 'results': quiz_data['students'][id]})
+        
+        if quiz_data['use_openai']:
+            is_correct = check_answer(question, answer)
+        else:
+            # Check if the answer matches the custom answer
+            is_correct = any((q == question and a == answer) for q, a in quiz_data['custom_questions'])
+        
+        quiz_data['students'][id].append({'question': question, 'answer': answer, 'is_correct': is_correct})
+        
+        if len(quiz_data['students'][id]) < quiz_data['num_questions']:
+            return redirect(url_for('student', id=id))
+        else:
+            return "Quiz completed. Thank you!"
+    
+    if quiz_data['use_openai']:
+        if not quiz_data['content']:
+            return "No content available for generating questions. Please contact the teacher."
+
+        question = generate_open_ended_question(quiz_data['content'], quiz_data['students'][id])
+    else:
+        # Use one of the custom questions
+        used_questions = [ans['question'] for ans in quiz_data['students'][id]]
+        available_questions = [q for q, _ in quiz_data['custom_questions'] if q not in used_questions]
+        question = available_questions[0] if available_questions else "No more questions available."
+        if not available_questions:
+            return "No more questions available. Please contact the teacher."
+    return render_template('student.html', question=question)
+
+
+def generate_open_ended_question(content, previous_answers):
+    prompt = f"Create an open-ended question based on the following information: {content}"
+    
+    # Add context from previous answers if available
+    if previous_answers:
+        incorrect_answers = [ans for ans in previous_answers if not ans['is_correct']]
+        if incorrect_answers:
+            prompt += f" The student had difficulty with: {incorrect_answers[-1]['question']}"
+    
+    response = openai.Completion.create(
+        engine="text-davinci-002",
+        prompt=prompt,
+        max_tokens=100
+    )
+    
+    return response.choices[0].text.strip()
+
+
+def check_answer(question, answer):
+    response = openai.Completion.create(
+        engine="text-davinci-002",
+        prompt=f"Is the following answer correct for the question? Question: {question}. Answer: {answer}. Answer with yes or no.",
+        max_tokens=10
+    )
+
+    print("HI", response.choices[0].text)
+    
+    response_text = response.choices[0].text.strip().lower()
+    return 'yes' in response_text
+
+def generate_report(all_answers):
+    incorrect_questions = [ans['question'] for ans in all_answers if not ans['is_correct']]
+    summary = f"The student had difficulty with the following questions: {'; '.join(incorrect_questions)}."
+
+    response = openai.Completion.create(
+        engine="text-davinci-002",
+        prompt=f"Provide a detailed report based on the student's performance. {summary}",
+        max_tokens=200
+    )
+    
+    return response.choices[0].text.strip()
+
+@app.route('/quiz_data', methods=['GET'])
+def get_quiz_data():
+    data = {
+        "students": [],
+        "num_questions": quiz_data['num_questions']
+    }
+    for student_id, answers in quiz_data['students'].items():
+        correct_by_question = [ans['is_correct'] for ans in answers]
+        data["students"].append({"student_id": student_id, "results": correct_by_question})
+    return jsonify(data)
+
+@app.route('/student/<id>/report', methods=['GET'])
+def student_report(id):
+    if id in quiz_data['students']:
+        report = generate_report(quiz_data['students'][id])
+        return report
+    return "No report available for this student."
  
 if __name__ == '__main__':  
    app.run()
