@@ -39,9 +39,9 @@ def login_post():
         # Authentication successful
         userType = user_data[2]
         if userType == 'Teacher':
-            return render_template('Teacher_Dash.html')
+            return render_template('index.html') #RENDER TEACHER DASHBOARD
         else:
-             return render_template('index.html')
+             return render_template('index.html') #RENDER STUDENT DASHBOARD
     return render_template('auth/login.html')
             
 
@@ -71,9 +71,9 @@ def signup():
             mydb.commit()
             print('Registration successful. You can now log in.')
             if user_type == 'Teacher':
-                return render_template('Teacher_Dash.html')
+                return render_template('index.html') #USE TEACHER DASHBOARD HERE
             else:
-                return render_template('index.html')
+                return render_template('index.html') #USE STUDENT DASHBOARD HERE
 
     
 @app.route('/create_exam')
