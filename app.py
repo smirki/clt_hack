@@ -76,6 +76,9 @@ def signup():
                 return render_template('index.html')
 
     
+@app.route('/create_exam')
+def create_exam():
+    return render_template('new_exam.html')
     
 
 

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <title>Create New Exam</title>
+    <style>
+        /* Custom styling */
+        body {
+            background-color: #f4f6f9;
+        }
+
+        .form-container {
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 30px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-primary {
+            background-color: #007BFF;
+            border-color: #007BFF;
+            color: #fff;
+            padding: 10px 20px;
+            font-weight: 500;
+        }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+            border-color: #0056b3;
+        }
+
+        h2 {
+            font-weight: 600;
+            margin-bottom: 25px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="form-container">
+        <h2>Create New Exam</h2>
+        <form action="/generate-quiz-link" method="post">
+            <!-- Course Selection Dropdown -->
+            <div class="mb-3">
+                <label for="course" class="form-label">Select Course:</label>
+                <select id="course" name="course" class="form-select" required>
+                    <option value="course1">Course 1</option>
+                    <option value="course2">Course 2</option>
+                    <!-- ... add more courses as needed ... -->
+                </select>
+            </div>
+
+            <!-- Smart Questions Toggle -->
+            <div class="mb-3">
+                <label class="form-label">Use Smart Questions:</label>
+                <div class="form-check">
+                    <input type="radio" id="smart-yes" name="smart_questions" value="yes" class="form-check-input"
+                        required>
+                    <label for="smart-yes" class="form-check-label">Yes</label>
+                </div>
+                <div class="form-check">
+                    <input type="radio" id="smart-no" name="smart_questions" value="no" class="form-check-input"
+                        required>
+                    <label for="smart-no" class="form-check-label">No</label>
+                </div>
+            </div>
+
+            <!-- Number of Questions Input -->
+            <div class="mb-3">
+                <label for="num_questions" class="form-label">Number of Questions:</label>
+                <input type="number" id="num_questions" name="num_questions" min="1" class="form-control" required>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="mb-3">
+                <input type="submit" value="Generate Quiz Link" class="btn btn-primary">
+            </div>
+        </form>
+    </div>
+</body>
+
+</html>

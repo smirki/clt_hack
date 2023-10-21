@@ -4,12 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <title>Exams Dashboard</title>
     <style>
-        /* Basic styling */
-
+        /* Adjustments for Bootstrap styling */
         .sidebar {
-            height: 100%;
+            height: 100vh;
             width: 250px;
             position: fixed;
             top: 0;
@@ -20,16 +21,7 @@
 
         .sidebar a,
         .sidebar button {
-            padding: 10px 15px;
-            text-decoration: none;
-            font-size: 18px;
             color: white;
-            display: block;
-            border: none;
-            background: none;
-            width: 100%;
-            text-align: left;
-            cursor: pointer;
         }
 
         .sidebar a:hover,
@@ -38,76 +30,73 @@
         }
 
         .content {
-            margin-left: 260px;
+            margin-left: 250px;
+            /* Same as sidebar width */
             padding: 20px;
-        }
-
-
-        .card-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-        }
-
-        .card {
-            width: 200px;
-            border: 1px solid #ccc;
-            padding: 10px;
-            border-radius: 5px;
-            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
         }
 
         .create-exam-btn {
             position: fixed;
             bottom: 20px;
             right: 20px;
-            width: 60px;
-            height: 60px;
             background-color: #4CAF50;
             color: white;
             border: none;
             border-radius: 50%;
-            cursor: pointer;
-            font-size: 24px;
+            width: 60px;
+            height: 60px;
             display: flex;
             align-items: center;
             justify-content: center;
             box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+            text-decoration: none;
+        }
+
+        .create-exam-btn:hover {
+            text-decoration: none;
+            color: white;
         }
     </style>
 </head>
 
 <body>
 
-    <div class="sidebar">
-        <a href="/home">Home</a>
-        <a href="/student-data">Student Data</a>
-        <a href="/course-update">Course Update</a>
-        <button onclick="location.href='/'">Sign Out</button> <!-- Sign out button -->
+    <!-- Sidebar navigation using Bootstrap's list group -->
+    <div class="sidebar list-group">
+        <a href="/home" class="list-group-item list-group-item-action bg-dark">Home</a>
+        <a href="/student-data" class="list-group-item list-group-item-action bg-dark">Student Data</a>
+        <a href="/course-update" class="list-group-item list-group-item-action bg-dark">Course Update</a>
+        <button onclick="location.href='/'" class="list-group-item list-group-item-action bg-dark">Sign Out</button>
     </div>
 
     <!-- Main content area -->
-    <div class="content">
-        <!-- Your main content goes here -->
+    <div class="content container-fluid">
         <h2>Welcome to the Teacher Dashboard</h2>
-    </div>
-
-
-    <div class="card-container">
-        <!-- Example cards for previous exams -->
-        <div class="card">
-            <h3>Exam 1</h3>
-            <p>Date: 01/01/2023</p>
+        <!-- Using Bootstrap's row and col for responsive cards -->
+        <div class="row row-cols-1 row-cols-md-2 g-4 mt-4">
+            <!-- Example cards for previous exams -->
+            <div class="col">
+                <div class="card">
+                    <div class="card-body">
+                        <h3 class="card-title">Exam 1</h3>
+                        <p class="card-text">Date: 01/01/2023</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card">
+                    <div class="card-body">
+                        <h3 class="card-title">Exam 2</h3>
+                        <p class="card-text">Date: 02/15/2023</p>
+                    </div>
+                </div>
+            </div>
+            <!-- ... add more exam cards as needed ... -->
         </div>
-        <div class="card">
-            <h3>Exam 2</h3>
-            <p>Date: 02/15/2023</p>
-        </div>
-        <!-- ... add more exam cards as needed ... -->
     </div>
 
     <!-- Circular button to create a new exam -->
-    <button class="create-exam-btn" onclick="location.href='/create-exam'">+</button>
+    <a href="{{ url_for('create_exam') }}" class="create-exam-btn">+</a>
 </body>
 
 </html>
