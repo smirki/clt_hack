@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -8,27 +7,54 @@
     <title>Student Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
-
 <body class="bg-gray-100 h-screen font-sans">
     <div class="container mx-auto px-4 mt-10">
-        <h1 class="text-3xl mb-6 text-center font-bold text-blue-500">Create Your Own Quiz</h1>
+        <h1 class="text-3xl mb-6 text-center font-bold text-blue-500">Student Dashboard</h1>
         <div class="bg-white rounded-lg shadow-lg p-8">
             <form action="" method="post" class="space-y-4">
-                <div class="mb-4">
-                    <label for="content" class="block text-sm font-medium text-gray-700">Enter Content</label>
-                    <textarea id="content" name="content" required class="mt-1 p-2 w-full border rounded-md"></textarea>
-                </div>
-                <div class="mb-4">
-                    <label for="num_questions" class="block text-sm font-medium text-gray-700">Number of Questions</label>
-                    <input type="number" id="num_questions" name="num_questions" required class="mt-1 p-2 w-full border rounded-md">
-                </div>
                 <div>
-                    <input type="submit" value="Start Quiz"
-                        class="py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700 w-full">
+                    <input type="submit" value="Take Quiz" class="py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700 w-full">
                 </div>
             </form>
         </div>
+        <div class="bg-white rounded-lg shadow-lg p-8">
+            <form action="/student_self_setup" method="post" class="space-y-4">
+                <div>
+                    <label for="content">Your Study Content:</label>
+                    <textarea id="content" name="content" class="w-full h-32 border rounded-md"></textarea>
+                </div>
+                <div>
+                    <label for="num_questions">Number of Questions:</label>
+                    <input type="number" id="num_questions" name="num_questions" class="w-full border rounded-md">
+                </div>
+                <div>
+                    <input type="submit" value="Generate Self Quiz" class="py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700 w-full">
+                </div>
+            </form>
+        </div>
+        <div class="bg-white rounded-lg shadow-lg p-8 mt-6">
+            <h3 class="text-xl mb-4">Your Last Quiz Insights</h3>
+            <p>{{ insights }}</p>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Question</th>
+                    <th>Your Answer</th>
+                    <th>Correct?</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for ans in answers %}
+                <tr>
+                    <td>{{ ans['question'] }}</td>
+                    <td>{{ ans['answer'] }}</td>
+                    <td>{{ "Yes" if ans['is_correct'] else "No" }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        
     </div>
 </body>
-
 </html>

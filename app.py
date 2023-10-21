@@ -12,7 +12,7 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 app.secret_key = 'some_secret_key'  # A secret key for Flask's session
 
 # Initialize the OpenAI API with your token
-openai.api_key = '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'
+openai.api_key = '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'
 
 quiz_data = {
     'content': '',
@@ -51,12 +51,13 @@ def login_post():
     
     if user_data and user_data[1] == password:
         print(user_data)
+        session['username'] = username
         # Authentication successful
         userType = user_data[2]
         if userType == 'Teacher':
             return render_template('teacher.html', quiz_data=quiz_data)  #RENDER TEACHER DASHBOARD
         else:
-             return render_template('index.html') #RENDER STUDENT DASHBOARD
+            return redirect(url_for('student_dashboard'))
     return render_template('auth/login.html')
             
 
@@ -177,7 +178,9 @@ def student(id):
         if len(quiz_data['students'][id]) < quiz_data['num_questions']:
             return redirect(url_for('student', id=id))
         else:
-            return "Quiz completed. Thank you!"
+            insights = generate_insights(quiz_data['students'][id])
+            quiz_data['students'][id].append({'insights': insights})
+            return render_template('student_dashboard.html', insights=insights)
     
     if quiz_data['use_openai']:
         if not quiz_data['content']:
@@ -207,6 +210,20 @@ def generate_open_ended_question(content, previous_answers):
         engine="text-davinci-002",
         prompt=prompt,
         max_tokens=100
+    )
+    
+    return response.choices[0].text.strip()
+
+def generate_insights(answers):
+    incorrect_answers = [ans['question'] for ans in answers if not ans['is_correct']]
+    correct_count = sum(1 for ans in answers if ans['is_correct'])
+    
+    prompt = f"The student answered {correct_count} questions correctly. They had difficulty with: {', '.join(incorrect_answers)}. Provide insights on their performance and understanding."
+
+    response = openai.Completion.create(
+        engine="text-davinci-002",
+        prompt=prompt,
+        max_tokens=200
     )
     
     return response.choices[0].text.strip()
@@ -252,13 +269,33 @@ def student_dashboard():
     if 'username' not in session:
         return redirect(url_for('login_post'))
 
-    if request.method == 'POST':
-        # Handle form submission for importing content or taking quizzes
-        # For now, let's just redirect to the student's quiz page
-        student_id = session['username'] # assuming the username is unique and serves as an ID
-        return redirect(url_for('student', id=student_id))
+    student_id = session['username']
+
+    # Retrieve insights and answers
+    student_data = quiz_data['students'].get(student_id, [])
+    insights = ''
+    answers = []
+    for data in student_data:
+        if 'insights' in data:
+            insights = data['insights']
+        else:
+            answers.append(data)
+
+    return render_template('student_dashboard.html', insights=insights, answers=answers)
+
+
+
+@app.route('/student_self_setup', methods=['POST'])
+def student_self_setup():
+    if 'username' not in session:
+        return redirect(url_for('login_post'))
+
+    # Store the student's content and number of questions in the session
+    session['student_content'] = request.form['content']
+    session['student_num_questions'] = int(request.form['num_questions'])
     
-    return render_template('student_dashboard.html')
+    return redirect(url_for('student_self_quiz'))
+
 
 
 @app.route('/student_self_quiz', methods=['GET', 'POST'])
@@ -281,7 +318,9 @@ def student_self_quiz():
             session['student_num_questions'] = num_questions - 1
             return redirect(url_for('student_self_quiz'))
         else:
-            return "Quiz completed. Thank you!"
+            flash("Quiz completed. Thank you!", "success")
+            return redirect(url_for('student_dashboard'))
+
     
     question = generate_open_ended_question(content, [])
     return render_template('student.html', question=question)
