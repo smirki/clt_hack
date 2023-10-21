@@ -13,4 +13,8 @@ CREATE TABLE users_hack (
 INSERT INTO users_hack (UserID, Username, Password, UserType) VALUES
     (1, 'alanka', 'pass', 'Student'),
     (2, 'jpatel', 'pass', 'Teacher');
+    
+SELECT * FROM users_hackusers_hack
 
+ALTER TABLE users_hack MODIFY UserID INT AUTO_INCREMENT PRIMARY KEY;
+ALTER TABLE users_hack DROP PRIMARY KEY;

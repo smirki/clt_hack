@@ -1,4 +1,5 @@
 from flask import Flask,render_template, request
+from flask.helpers import redirect
 from flask_mysqldb import MySQL
 import mysql.connector
  
@@ -7,7 +8,7 @@ app = Flask(__name__)
 
 
 mydb = mysql.connector.connect(user='root', password='Soccersoccer23*', host='localhost', database='users_hack')
-cursor = mydb.cursor()
+
 # app.config['MYSQL_HOST'] = '127.0.0.1'
 # app.config['MYSQL_USER'] = 'root'
 # app.config['MYSQL_PASSWORD'] = 'Soccersoccer23*'
@@ -27,40 +28,55 @@ def login_post():
     password = request.form.get('password')
 
     # Query the database to check for the user's credentials
-    query = "SELECT username, password FROM users_hack WHERE username = %s"
+    query = "SELECT username, password, UserType FROM users_hack WHERE username = %s"
+    cursor = mydb.cursor()
     cursor.execute(query, (username,))
     user_data = cursor.fetchone()
 
+    
     if user_data and user_data[1] == password:
+        print(user_data)
         # Authentication successful
-        return render_template('index.html')
+        userType = user_data[2]
+        if userType == 'Teacher':
+            return render_template('Teacher_Dash.html')
+        else:
+             return render_template('index.html')
+    return render_template('auth/login.html')
+            
 
-
+@app.route('/signup_page')
+def go_signup():
+    return render_template('auth/signup.html')
 
 @app.route('/signup', methods=['GET', 'POST'])
-def signup():
-    render_template('auth/signup.html')
-
-     
+def signup():    
     if request.method == 'POST':
         username = request.form['username']
-        email = request.form['email']
         password = request.form['password']
+        user_type = request.form['user_type']  # Assuming you have a form field for user type
 
-        # Check if the username or email already exists in the database
-        cursor = mysql.connection.cursor()
-        cursor.execute("SELECT * FROM users_hack WHERE username = %s OR email = %s", (username, email))
+   
+
+    # Check if the username already exists in the database
+        cursor = mydb.cursor()
+        cursor.execute("SELECT * FROM users_hack WHERE Username = %s", (username,))
         user = cursor.fetchone()
 
         if user:
-            flash('Username or email already exists. Please choose a different one.')
+            print('Username already exists. Please choose a different one.')
+            return render_template('auth/signup.html')
         else:
-            cursor.execute("INSERT INTO users_hack (username, email, password) VALUES (%s, %s, %s)", (username, email, password))
-            mysql.connection.commit()
-            flash('Registration successful. You can now log in.')
-            return redirect(url_for('auth/login'))
+            cursor.execute("INSERT INTO users_hack (Username, Password, UserType) VALUES (%s, %s, %s)", (username, password, user_type))
+            mydb.commit()
+            print('Registration successful. You can now log in.')
+            if user_type == 'Teacher':
+                return render_template('Teacher_Dash.html')
+            else:
+                return render_template('index.html')
+
     
-    return render_template('login.html')
+    
 
 
 
